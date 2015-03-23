@@ -1,0 +1,924 @@
+\documentclass[10pt,intlimits,unicode,nonav,aspectratio=169]{beamer}
+
+
+\ifpdf\usepackage{epstopdf}\fi
+\ifpdf\usepackage{cmap}\fi
+\ifpdf\usepackage[pdftex]{thumbpdf}\fi
+\usepackage[T1]{fontenc}
+% \usepackage[utf8x]{inputenx} % Not needed, since we use xelatex
+\usepackage[english]{babel}
+\usepackage{subcaption}
+\usepackage{tikz}
+\usetikzlibrary{calc}
+\usetikzlibrary{backgrounds}
+\usepackage{latexsym, amssymb, amsthm}
+\usepackage{amsfonts}
+\usepackage{amsmath}
+\usepackage{graphicx}
+\usepackage{yhmath}
+\usepackage{siunitx}
+\usepackage{hyperref}
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+
+% For stroking out
+\usepackage[normalem]{ulem}
+
+\newcommand{\pkg}[1]{`\texttt{#1}'}
+\newcommand{\R}{\textsc{\textbf{R}}}
+
+\usepackage{graphicx}
+\setbeameroption{hide notes}
+\setbeamertemplate{note page}[plain]
+
+% \newcommand{\hlppc}[1]{\textcolor[rgb]{0.345,0.345,0.345}{#1}}%
+\newcommand{\hlppc}[1]{\textcolor[rgb]{0.192,0.494,0.8}{#1}}%
+
+
+% TODO make proper macro for code
+\newcommand{\code}[1]{\texttt{#1}}
+\newcommand{\bigO}[1]{\mathcal{O}({#1})}
+
+% get rid of junk
+\usetheme{Warsaw}
+\beamertemplatenavigationsymbolsempty
+\hypersetup{pdfpagemode=UseNone} % don't show bookmarks on initial view
+
+% font
+\usepackage{fontspec}
+% \setsansfont[Ligatures={Common,TeX}, Numbers={OldStyle}]{TeX Gyre Heros}
+\setsansfont[Ligatures={Common,TeX}]{TeX Gyre Heros}
+
+% \setbeamerfont{note page}{family*=pplx,size=\footnotesize} % Palatino for notes
+% "TeX Gyre Heros can be used as a replacement for Helvetica"
+% In Unix, unzip the following into ~/.fonts
+% In Mac, unzip it, double-click the .otf files, and install using "FontBook"
+%   http://www.gust.org.pl/projects/e-foundry/tex-gyre/heros/qhv2.004otf.zip
+%\setbeamercovered{transparent}
+
+\usepackage{fontawesome}
+\newfontfamily{\FA}{FontAwesome Regular}
+\def\twitter{{\FA \faTwitter}}
+\def\github{{\FA \faGithub}}
+\def\githubsign{{\FA \faGithubSign}}
+\def\envelope{{\FA \faEnvelope}}
+\def\envelopealt{{\FA \faEnvelopeAlt}}
+
+\AtBeginSection[]
+{
+  \begin{frame}
+    \frametitle{Outline}
+    \tableofcontents[currentsection]
+  \end{frame}
+}
+
+\setbeamertemplate{headline}{}
+
+% \setbeamertemplate{frametitle}{%
+%     \begin{beamercolorbox}[wd=\paperwidth,ht=2ex,dp=2ex,left]{frametitle}%
+%       \hspace*{2ex}\insertframetitle%
+%     \end{beamercolorbox}}
+
+
+
+\title[R code optimization and profiling]{R code optimization and profiling}
+
+% \titlegraphic{\includegraphics[width=1in]{spbrug_logo}}
+\usepackage[absolute,overlay]{textpos}
+\setlength{\TPHorizModule}{1cm} % Horizontale Einheit
+\setlength{\TPVertModule}{1cm} % Vertikale Einheit
+\addtobeamertemplate{title page}{
+\begin{textblock}{3}(10.5,5)
+  \href{https://vk.com/spbrug}{\includegraphics[width=2in]{spbrug_logo}}
+\end{textblock}
+}{}
+
+
+\author[Alex Shlemov]{Alex Shlemov\\
+  \smallskip
+  \href{mailto:a.shlemov@spbu.ru}{\envelope\ a.shlemov@spbu.ru}\\
+  % \href{mailto:shlemovalex@gmail.com}{\envelopealt\ shlemovalex@gmail.com}\\
+  % \href{https://github.com/eodus}{\githubsign\ github.com/eodus}\\
+  \href{https://github.com/eodus}{\github\ eodus}\\
+  % \href{http://twitter.com/eodus}{\twitter\ eodus}\\
+}
+
+\institute{
+  Saint Petersburg State University, Russia \\
+  Faculty of Mathematics and Mechanics\\
+  Department of Statistical Modelling\\
+}
+
+\date{\small
+% MTNS 2014, Groningen, The Netherlands,\\
+  \today}
+% \expandafter\def\expandafter\insertshorttitle\expandafter{%
+%     \insertshorttitle\hfill\insertframenumber\,/\,\inserttotalframenumber}
+
+\defbeamertemplate*{footline}{shadow theme}{%
+\leavevmode%
+\hbox{\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm plus1fil,rightskip=.3cm]{author in head/foot}%
+    \usebeamerfont{author in head/foot}
+\insertframenumber\,/\,\inserttotalframenumber\hfill\insertshortauthor
+\end{beamercolorbox}%
+
+\begin{beamercolorbox}[wd=.5\paperwidth,ht=2.5ex,dp=1.125ex,leftskip=.3cm,rightskip=.3cm plus1fil]{title in head/foot}%
+    \usebeamerfont{title in head/foot}\insertshorttitle\hfill%
+\end{beamercolorbox}}%
+\vskip0pt%
+}
+
+
+
+\begin{document}
+<<setup, include=FALSE>>=
+library(knitr)
+opts_chunk$set(fig.path = 'figure/beamer-',
+               fig.align = 'center',
+               fig.show = 'hold',
+               size = 'footnotesize',
+               background = 'white')
+options(width = 200)
+@
+
+\maketitle
+
+\section{Introduction}
+\begin{frame}
+  \frametitle{Introduction}
+\begin{columns}[T]
+    \column{.5\textwidth}
+  \R{} is very good:
+  \begin{itemize}
+    % \setlength{\itemsep}{0pt}
+    \setlength{\parskip}{0.5em}
+    \item High-level language with a lot of useful features
+    \item Friendly, smooth learning curve
+    \item Much cool out-of-box stuff
+    \item Many packages
+    \item Broad community
+    \item Open and free
+    \item Cross-platform (really cross-platform!)
+    \item Easily extendable
+    \item \dots
+
+  \end{itemize}
+    \column{.5\textwidth}
+    \pause
+    \dots{}but sometimes it's very slow!
+
+  \begin{center}
+    \includegraphics[width=\columnwidth]{img/079Slowpoke}
+  \end{center}
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Example}
+%   Let's compute $f(n) := \sum_{i = 1}^n \sin(i)$
+  % \begin{equation*}
+  %   f(n) := \sum_{i = 1}^n \sin(i)
+  % \end{equation*}
+
+\begin{columns}[T]
+    \column{.5\textwidth}
+    C++ (via \pkg{Rcpp}):
+<<fCpp, engine='Rcpp'>>=
+#include <Rcpp.h>
+#include <cmath>
+
+// [[Rcpp::export]]
+double fcpp(const int n) {
+  double s = 0.;
+  for (int i = 1; i <= n; ++i)
+    s += sin(i);
+
+  return s;
+}
+@
+\vspace{-1.7em}
+<<fCppTest, dependson='fCpp', cache=TRUE>>=
+fcpp(1e6)
+system.time(fcpp(1e6))
+@
+    \column{.5\textwidth}
+    \R{} (Revolution):
+~\\
+~\\
+~\\
+~\\
+<<fRTest, cache=TRUE>>=
+f <- function(n) {
+  s <- 0
+  for (i in 1:n)
+    s <- s + sin(i)
+
+  s
+}
+
+f(1e6)
+system.time(f(1e6))
+@
+    \end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{\pkg{microbenchmark} timing package}
+  \code{system.time()} works, but for fast calls it may be unprecise
+
+  \code{microbenchmark} from the package \pkg{microbenchmark} is better alternative:
+
+<<firstMBDemo, dependson=c('fCpp', 'fRTest'), cache=TRUE>>=
+library(microbenchmark)
+
+microbenchmark(f(1e6), fcpp(1e6), times = 25)
+@
+
+\bigskip
+\code{benchmark()} from \pkg{rbenchmark} is quite good too:
+<<rMDemo, dependson=c('fCpp', 'fRTest'), cache=TRUE>>=
+library(rbenchmark)
+benchmark(f(1e6), fcpp(1e6), replications = 25)
+@
+
+\end{frame}
+
+\begin{frame}
+  \frametitle{Motivation}
+  \textbf{Why is \R{} code so slow?.. Main three causes:}
+  \begin{itemize}
+    \item Often \R{} code is poor written (nothing to add)
+    \item \R{} implementation is not optimized
+    \item \R{} is extremely \emph{dynamic} language (all types are polymorphic,
+      we can write to every environment in any time, etc)
+  \end{itemize}
+  See \url{http://adv-r.had.co.nz/Performance.html} for comprehensive explanation
+
+  \bigskip
+  \textbf{How to speedup \R{} code?}
+  \begin{itemize}
+     \item Write better code following the \R{} way
+     \item Use optimized \R{} implementations
+     \item (If we really need) Reduce ``dynamism'' and/or use more low-level approaches
+       (give up polymorphism, use  more low-level functions or more low-level languages and so on)
+  \end{itemize}
+%  In R, more elegant code is often more efficient code
+\end{frame}
+
+\begin{frame}
+  \frametitle{Epigraph}
+  \begin{quote}
+    ``Programmers waste enormous amounts of time thinking about, or worrying about,
+    the speed of noncritical parts of their programs, and these attempts at
+    efficiency actually have a strong negative impact when debugging and
+    maintenance are considered''\\
+    \rightline{{\normalfont --- Donald Knuth}}
+  \end{quote}
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Outline}
+  \tableofcontents
+\end{frame}
+\section{The R way, patterns and antipatterns}
+\begin{frame}[fragile]
+  \frametitle{Vectorization}
+  \begin{quote}
+    Loops are ugly and slow. Vectorized operations are elegant and fast
+  \end{quote}
+
+  Let's try:
+<<fvecTest, dependson='fCpp'>>=
+library(microbenchmark)
+fvec <- function(n) {
+  sum(sin(1:n))
+}
+
+microbenchmark(f(1e5), fvec(1e5), fcpp(1e5), times = 10)
+@
+
+  Not bad!
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Vectorized functions}
+  Use:
+  \begin{itemize}
+    \item vectorized mathematical functions like \code{sin()}, \code{log()}, etc;
+    \item \code{ifelse()} as ``vectorized if'';
+    \item \code{colSums()}
+      instead of \code{apply(X, 2, sum)}, \code{rowMeans()}
+      instead of \code{apply(X, 1, mean)} and so on;
+    \item \code{max.col(X)} rather than \code{apply(X, 1, which.max)};
+    \item vectorized subscripting, e.g. \code{x[is.na(x)] <- 0} or
+      \code{x <- x[x \%in\% S]};
+    \item vectorized subscripting for matrices and arrays like
+      \text{\code{m[1:10, ]}}, \text{\code{m[cbind(1:10, 10:1)]}} and \code{m[1:10]}
+  \end{itemize}
+
+  \bigskip
+  \code{match()} and \code{\%in\%} are also vectorized.
+
+  \bigskip
+  Be aware of some vectorized functions like \code{diff()} and \code{cumsum()}
+
+  \bigskip
+  Combine! Write your own vectorized functions
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{\code{*apply()} and their friends}
+  \code{*apply()}, \code{vectorize()}, \code{replicate()},
+  \code{aggregate()}, etc
+  don't provide any real vectorization!
+
+  \bigskip
+  They are less efficient than vectorized functions but usually much better than ordinary loops
+  because of it's easy to parallelize them
+
+  \medskip
+  Package \pkg{foreach} is good alternative for loops too (by the same reason)
+
+  \bigskip
+  Be aware of \code{tapply()} (and \code{by()}).
+  \code{tapply()} is \emph{grouping} apply (like SQL' \code{GROUP BY}):
+<<tapplyExample>>=
+h <- data.frame(sex = sample(c("male", "female"), size = 10, replace = TRUE),
+                height = rnorm(10, mean = 170, sd = 10))
+tapply(h$height, h$sex, mean)
+@
+
+\bigskip
+\code{rapply()} is also sometimes useful
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Memory preallocation}
+  \R{} vectors are not like C++ \code{std::vector}'s,
+  \R{} don't reserve any space for ``appending''. Each resizing invokes
+  reallocation with $\bigO{l}$ complexity.
+
+  Thus, such code:
+<<eval=FALSE>>=
+x <- c()
+for (i in 1:n) {
+  x <- c(x, f(i))
+}
+@
+  has $\bigO{n^2}$ time complexity! Avoid growing objects!
+
+
+Always try to use vectorization. If it's impossible:
+<<eval=FALSE>>=
+# x <- numeric(n) # NA-filling is better because of preventing some errors
+x <- rep(NA_real_, n) # Preallocation, suppose that all results are numeric
+for (i in seq_len(n)) { # seq_len is a bit faster
+  x[i] <- f(i)
+}
+@
+
+  \code{*apply()} function family almost always provides better alternative, e.g.:
+<<eval=FALSE>>=
+x <- sapply(1:n, f) # Shorter
+x <- vapply(seq_len(n), f, f(1)) # Litte bit faster because of more proper preallocation
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{If you really need growing object\dots}
+  \dots{}Use preallocation like in \code{std::vector}
+\begin{columns}[T]
+    \column{.5\textwidth}
+  Bad:
+<<eval=FALSE>>=
+res <- c()
+i <- 1
+while(TRUE) {
+  cur <- f(i)
+  if (g(cur)) { # Some stop condition
+    break
+  } else {
+    res <- c(res, cur)
+  }
+  i <- i + 1
+}
+@
+    \column{.5\textwidth}
+Much better:
+<<eval=FALSE>>=
+res <- c()
+i <- 1
+while(TRUE) {
+  cur <- f(i)
+  if (g(cur)) { # Some stop condition
+    break
+  } else {
+    if (length(res) < i)
+      res[2 * i] <- NA_real_
+    res[i] <-  cur
+  }
+  i <- i + 1
+}
+res <- res[seq_len(i - 1)] # Truncate
+@
+\end{columns}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Prefer in-place operations}
+  In-place operations are often much faster:
+<<squish>>=
+squish_ife <- function(x, a, b) {
+  ifelse(x <= a, a, ifelse(x >= b, b, x))
+}
+squish_p <- function(x, a, b) {
+  pmax(pmin(x, b), a)
+}
+squish_in_place <- function(x, a, b) {
+  x[x <= a] <- a
+  x[x >= b] <- b
+  x
+}
+
+x <- runif(100, -1.5, 1.5)
+microbenchmark(squish_ife(x, -1, 1), squish_p(x, -1, 1), squish_in_place(x, -1, 1))
+@
+\end{frame}
+\begin{frame}[fragile]
+  \frametitle{Chunking for large structures}
+  Remember our ``sum of sines''. Let $n$ be very big:
+<<OOM, cache=TRUE>>=
+fvec <- function(n) {
+  sum(sin(seq_len(n))) # <= Huge vector constructed here
+}
+
+f(1e10) # CRASH!
+@
+
+  Try to devectorize (chunk):
+<<Chunking, cache=TRUE>>=
+fchunk <- function(n, chunk = 1e7) {
+  sum(vapply(seq(from = 1, by = chunk, length.out = ceiling(n / chunk)),
+             function(i) sum(sin(seq(i, min(i + chunk - 1, n)))),
+             0.))
+}
+fchunk(1e10)
+@
+\end{frame}
+
+\begin{frame}
+  \frametitle{Use proper methods, functions, data structures and packages}
+  Where are many \R{} packages\dots\\
+  \dots{}and some of them are better than others
+
+  \bigskip
+  Find proper packages for your problem!
+  % Be honest, some packages are ill-coded!
+
+  \bigskip
+  Try to use, e.g:
+  \begin{itemize}
+    \item \pkg{data.table} and \pkg{sqldf} for big dataframes;
+    \item \pkg{zoo}, \pkg{xts} for time series;
+    \item \pkg{mboost}, \pkg{flare} for linear regression;
+    \item \pkg{optimx} for optimization;
+    \item \pkg{cluster} for clustering;
+    \item \pkg{Matrix} for large sparse matrices;
+    \item \pkg{svd} for fast truncated SVD (used e.g. for PCA and related methods);
+    \item \pkg{FFTW} for Fourier transform (rather than slow \code{fft()});
+    \item \dots
+  \end{itemize}
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Parallelize}
+\emph{K-means} clustering with multistart (single-thread and parallel versions):
+<<kmeans,cache=TRUE>>=
+best.kmeans <- function(x, centers, N) {
+cls <- lapply(seq_len(N),
+              function(i) kmeans(x, centers = centers))
+cls[[which.min(sapply(cls, function(x) x$tot.withinss))]]
+}
+
+best.kmeans.par <- function(x, centers, N, cluster) {
+cls <- parLapplyLB(cluster,
+                   seq_len(N),
+                   function(i) kmeans(x, centers = centers))
+cls[[which.min(sapply(cls, function(x) x$tot.withinss))]]
+}
+@
+
+  \bigskip
+  Package \pkg{foreach} provides more friendly interface
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Parallelize}
+<<kmeans2, dependson='kmeans', cache=TRUE>>=
+library(parallel)
+cores <- detectCores()
+cores
+cluster <- makePSOCKcluster(cores)
+
+USA.scaled <- scale(USArrests)
+
+clusterExport(cluster, "USA.scaled")
+
+microbenchmark(singe = best.kmeans(USA.scaled, 5, 1000),
+               parallel = best.kmeans.par(USA.scaled, 5, 1000, cluster), times = 10)
+
+stopCluster(cluster)
+@
+\end{frame}
+
+\section{``Something for nothing''}
+\begin{frame}[fragile]
+  \frametitle{Byte-compilation and JIT}
+\R{} is \emph{interpreter.}
+Originally \R{} considered a function as a raw text and parsed it on each call.
+Byte-compilation can reduce time costs for expression parsing:
+<<ByteComp, cache=TRUE>>=
+f <- function(n) {
+  s <- 0
+  for (i in 1:n) s <- s + sin(i)
+
+  s
+}
+
+library(compiler)
+fcomp <- cmpfun(f)
+
+microbenchmark(f(1e5), fcomp(1e5), times = 100)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Byte-compilation and JIT}
+  JIT means \emph{Just-In-Time} [compilation]. If JIT is enabled, all functions
+are automatically compiled before their first use
+<<eval=FALSE>>=
+enableJIT(3) # 3 means the most aggressive compilation
+@
+
+\bigskip
+  \textbf{Pro:}
+  \begin{itemize}
+    \item Something for nothing, easy to try, easy to give up
+    \item Sometimes significantly speedups complicated code
+  \end{itemize}
+  \bigskip
+  \textbf{Contra:}
+  \begin{itemize}
+    \item Byte-compiled code cannot to be profiled
+    \item Much speedup only for loops; almost no speedup for vectorized code
+    \item Sometimes slows up code (a little bit, but\dots)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Alternative math libraries}
+  \code{blas} and \code{LAPACK} are common used libraries for matrix operations and linear algebra
+
+  \medskip
+  \code{ATLAS}, \code{OpenBLAS}, \code{Intel MKL}, \code{AMD ACML}
+  provide more efficient implementation with the same interface
+
+  \medskip
+  On my Intel I3 laptop:
+<<eval=FALSE>>=
+mx <- matrix(rnorm(1000^2), 1000, 1000)
+@
+\begin{columns}[T]
+  \column{0.5\linewidth}
+<<eval=FALSE>>=
+#with default BLAS and LAPACK
+system.time(svd(mx))
+##    user  system elapsed
+##   4.734   0.016   4.751
+@
+  \column{0.5\linewidth}
+<<eval=FALSE>>=
+# with OpenBLAS and ATLAS LAPACK
+system.time(svd(mx))
+##   user  system elapsed
+##  3.391   0.348   1.942
+@
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{Alternative math libraries}
+  \textbf{Pro:}
+  \begin{itemize}
+    \item Speedup for all linear algebra procedures ($\mathbf{A}x = b$, PCA, LM, GLM, \dots)
+    \item Easy to install, easy to uninstall (on Linux)
+    \item Speedups not only R code (also Python \pkg{numpy}, GNU Octave, \dots)
+  \end{itemize}
+
+  \bigskip
+  \textbf{Contra:}
+  \begin{itemize}
+    \item Significant speedup only for large linear algebra problems
+    \item Possible bugs and incompatibilities
+    \item Non-trivial to install on Windows
+    \item Intel MKL and AMD ACML are the most efficient but both are commercial
+  \end{itemize}
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{R Revoluton}
+  \begin{quote}
+    ``Revolution \R{} Enterprise is the fastest,
+    most cost effective enterprise-class big data big analytics platform available today''
+  \end{quote}
+
+  \bigskip
+  \href{http://www.revolutionanalytics.com/revolution-r-open}{Revolution R{}}
+  is optimized \R{} distribution, which already includes Intel MKL
+
+  \bigskip
+  Even faster than OpenBLAS:
+<<eval=FALSE>>=
+mx <- matrix(rnorm(1000^2), 1000, 1000)
+@
+\begin{columns}[T]
+  \column{0.5\linewidth}
+<<eval=FALSE>>=
+#with Revolution (Intel MKL) BLAS and LAPACK
+system.time(svd(mx))
+##    user  system elapsed
+##   2.425   0.012   1.365
+@
+  \column{0.5\linewidth}
+<<eval=FALSE>>=
+# with OpenBLAS and ATLAS LAPACK
+system.time(svd(mx))
+##   user  system elapsed
+##  3.391   0.348   1.942
+@
+\end{columns}
+\end{frame}
+
+\begin{frame}
+  \frametitle{R Revolution}
+  \textbf{Pro:}
+  \begin{itemize}
+    \item Open edition is free
+    \item Easy to install (anywhere). Just execute installer
+    \item Already provides Intel MKL (for R only) for all supported platforms
+    \item Some common \R{} packages are optimized too
+  \end{itemize}
+
+  \bigskip
+  \textbf{Contra:}
+  \begin{itemize}
+     \item Commercial-based; less community support; possible copyright/license issues
+     \item \sout{Possible} bugs and incompatibilities (e.g. with \pkg{svd}, \pkg{devtools})
+     \item Some packages may have old versions
+   \end{itemize}
+\end{frame}
+
+
+
+
+\section{Some low-level optimization techniques}
+\begin{frame}[fragile]
+  \frametitle{Get rid of S3/S4 method dispatching}
+  S3/S4 method dispatching (polymorphism) is very slow (R isn't C++ or Java)
+
+  \bigskip
+  E.g., function \code{mean()} is generic (S3 polymorphic function):
+<<mean, cache=TRUE>>=
+methods(mean)
+
+x <- runif(1e2)
+
+microbenchmark(mean(x), mean.default(x))
+@
+
+\bigskip
+  Thus, for S3 specify function directly, for S4 use
+  for S4 use \code{findMethod()} to find the method and cache it into variable
+\end{frame}
+
+
+\begin{frame}[fragile]
+  \frametitle{Work on low-level}
+  \R{} is friendly and it's functions contains a lot of checks and coercions. If we exclude it,
+  we can significantly speedup our code
+<<eval=FALSE>>=
+findInterval
+## function (x, vec, rightmost.closed = FALSE, all.inside = FALSE)
+## {
+## if (anyNA(vec))
+## stop("'vec' contains NAs")
+## if (is.unsorted(vec))
+## stop("'vec' must be sorted non-decreasingly")
+## .Internal(findInterval(as.double(vec), as.double(x), rightmost.closed,
+## all.inside))
+## }
+@
+  \bigskip
+  We can just write:
+<<eval=FALSE>>=
+findInterval.fast <- function (x, vec, rightmost.closed = FALSE, all.inside = FALSE)
+{
+    .Internal(findInterval(as.double(vec), as.double(x), rightmost.closed,
+        all.inside))
+}
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Work on low-level}
+  For \code{mean():}
+<<eval=FALSE,cache=TRUE>>=
+mean.default
+## function (x, trim = 0, na.rm = FALSE, ...)
+## {
+##
+## if (!is.numeric(x) && !is.complex(x) && !is.logical(x)) {
+##   warning("argument is not numeric or logical: returning NA")
+##   return(NA_real_)
+## }
+## ...
+@
+<<cache=TRUE>>=
+x <- runif(1e2)
+
+microbenchmark(mean(x), mean.default(x), sum(x) / length(x), .Internal(mean(x)))
+@
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Call other code from \R{}}
+  Most simple:\\
+  You can combine R with other languages (using files, pipes, sockets, etc)
+
+  \bigskip
+  Most effective:\\
+  Also you can write your own package using Fortran, C or C++
+
+  \bigskip
+  Most comfortable:\\
+  use packages \pkg{rJava}, \pkg{rPython} and especially \pkg{Rcpp}
+
+\end{frame}
+
+
+\begin{frame}
+  \frametitle{Some advices}
+  Avoid premature optimization (``root of all evil'') and ``optimization for optimization''.
+  Optimize only critical parts of code. Use profiler to find them
+
+  \bigskip
+  Optimized code may be erroneous. Verify optimized code by unit tests
+
+  \bigskip
+  Estimate actual speedup by timing.
+  Don't use optimization which makes code much complicated but no significantly faster
+\end{frame}
+
+\section{Code profiling}
+
+%\begin{frame}
+%  \frametitle{}
+%  Two citations
+%
+%  About root of evil from Donald Knuth
+%
+%  and about two options from Hadly Wickham
+%
+%  1) Use profiling to find bottlenecks
+%  2) Use timing to estimate obtained speedup
+%  3) Use unit tests for verification
+%
+%\end{frame}
+%
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Profiling}
+  \emph{Code profiling} is dynamic program analysis that measures space or time complexity
+  of a program
+
+  \medskip
+  \textbf{Idea:} Run program and evaluate time of each call
+
+  \bigskip
+  Functions and packages:
+  \begin{itemize}
+    \item \code{Rprof()}, \code{summaryRprof()} --- standard, out-of-box
+    \item \code{profr} from package \pkg{profr} (from CRAN)
+    \item \code{lineprof()} from package \pkg{lineprof} (from Hadley's GitHub)
+  \end{itemize}
+<<eval=FALSE>>=
+install.packages("devtools")
+library(devtools)
+install_github("hadley/lineprof")
+library(lineprof)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Profiling example}
+
+<<cache=TRUE>>=
+fchunk <- function(n, chunk = 1e7) {
+  sum(vapply(seq(from = 1, by = chunk, length.out = ceiling(n / chunk)),
+             function(i) sum(sin(seq(i, min(i + chunk - 1, n)))),
+             0.))
+}
+
+Rprof(interval = 0.001)
+fchunk(10^8)
+Rprof(NULL)
+head(summaryRprof()$by.self, 10)
+@
+\end{frame}
+
+\begin{frame}[fragile]
+  \frametitle{Profiling example}
+<<>>=
+head(summaryRprof()$by.total, 15)
+@
+
+\end{frame}
+
+
+
+\begin{frame}[fragile]
+  \frametitle{Profiling limitations}
+  \begin{itemize}
+    \setlength{\parskip}{0.75em}
+    \item Profiling does not extend to C code. You can see if your \R{} code calls
+      C/C++ code but not what functions are called inside of your C/C++ code
+    \item Similarly, you can't see what's going on inside primitive functions or byte code compiled code
+    \item If you’re doing a lot of functional programming with anonymous
+      functions, it can be hard to figure out exactly which function is being
+      called. The easiest way to work around this is to name your functions
+    \item Some calls are too fast to be traced by profiler
+    \item Profiling may influence to code performance
+  \end{itemize}
+\end{frame}
+
+\section{Conclusions and further studying}
+\begin{frame}
+  \frametitle{Conclusions}
+  \begin{itemize}
+    \setlength{\parskip}{0.75em}
+    \item Use high-level optimization, avoid low-level one
+    \item Avoid premature optimization, use profiler to find bottlenecks
+    \item \pkg{Rcpp} is good tool for low-level optimization
+    \item Use timing for estimation of obtained speedup
+    \item Use unit test for verification of optimized code
+    \item Some \R{} distributions are faster (but may be incompatible)
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \frametitle{For further studying}
+  \textbf{Out-of-view subjects:}
+  \begin{itemize}
+    \item \pkg{Rcpp}, \pkg{rPython}, \pkg{rJava}
+    \item Writing own packages
+    \item Memory tracing and profiling
+    \item Profiling of compiled code
+    \item Alternative \R{} implementations (\pkg{pqR}, \pkg{Renjin}, \pkg{FastR}, \pkg{Riposte})
+  \end{itemize}
+
+  \textbf{Useful packages:}
+  \begin{itemize}
+    \item \pkg{sqldf} and \pkg{data.table} for big dataframes
+    \item \pkg{testthat} for unit tests
+    \item \pkg{foreach} for effective loops paralleling
+  \end{itemize}
+
+  \textbf{Useful links:}
+  \begin{itemize}
+    \item \href{http://adv-r.had.co.nz/}{Advanced \R{}} by Hadley Wickham
+    \item \href{http://www.burns-stat.com/documents/books/the-r-inferno/}{The \R{} Inferno} by Patrick Burns
+    \item \href{http://r-pkgs.had.co.nz/}{\R{} Packages} by Hadley Wickham
+    \item \href{http://cran.r-project.org/doc/manuals/r-release/R-exts.html}{Writing \R{} Extensions}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}
+  \begin{center}
+    \Huge Thanks for your attention!
+  \end{center}
+  \pause
+  \begin{center}
+    \includegraphics[width=0.3\columnwidth]{img/tumblr_mwh3gdLBsr1snrhspo1_1280.jpg}
+  \end{center}
+\end{frame}
+\end{document}
