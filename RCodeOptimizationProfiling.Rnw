@@ -109,9 +109,7 @@
   Department of Statistical Modelling\\
 }
 
-\date{\small
-% MTNS 2014, Groningen, The Netherlands,\\
-  \today}
+\date{\small\today}
 % \expandafter\def\expandafter\insertshorttitle\expandafter{%
 %     \insertshorttitle\hfill\insertframenumber\,/\,\inserttotalframenumber}
 
