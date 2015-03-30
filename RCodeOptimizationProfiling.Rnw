@@ -865,7 +865,7 @@ head(summaryRprof()$by.total, 15)
       functions, it can be hard to figure out exactly which function is being
       called. The easiest way to work around this is to name your functions
     \item Some calls are too fast to be traced by profiler
-    \item Profiling may influence to code performance
+    \item Profiling may influence code performance
   \end{itemize}
 \end{frame}
 
