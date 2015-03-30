@@ -470,7 +470,7 @@ fchunk(1e10)
 
 \begin{frame}
   \frametitle{Use proper methods, functions, data structures and packages}
-  Where are many \R{} packages\dots\\
+  There are many \R{} packages\dots\\
   \dots{}and some of them are better than others
 
   \bigskip
@@ -773,7 +773,7 @@ microbenchmark(mean(x), mean.default(x), sum(x) / length(x), .Internal(mean(x)))
 
 
 \begin{frame}
-  \frametitle{Some advices}
+  \frametitle{Some advice}
   Avoid premature optimization (``root of all evil'') and ``optimization for optimization''.
   Optimize only critical parts of code. Use profiler to find them
 
