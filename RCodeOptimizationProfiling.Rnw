@@ -575,7 +575,7 @@ enableJIT(3) # 3 means the most aggressive compilation
   \begin{itemize}
     \item Byte-compiled code cannot to be profiled
     \item Much speedup only for loops; almost no speedup for vectorized code
-    \item Sometimes slows up code (a little bit, but\dots)
+    \item Sometimes slows up code
   \end{itemize}
 \end{frame}
 
