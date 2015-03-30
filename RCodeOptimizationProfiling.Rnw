@@ -782,7 +782,7 @@ microbenchmark(mean(x), mean.default(x), sum(x) / length(x), .Internal(mean(x)))
 
   \bigskip
   Estimate actual speedup by timing.
-  Don't use optimization which makes code much complicated but no significantly faster
+  Don't use optimization which makes code much more complicated but not significantly faster
 \end{frame}
 
 \section{Code profiling}
