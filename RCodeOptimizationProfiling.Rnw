@@ -539,7 +539,7 @@ stopCluster(cluster)
 \begin{frame}[fragile]
   \frametitle{Byte-compilation and JIT}
 \R{} is \emph{interpreter.}
-Originally \R{} considered a function as a raw text and parsed it on each call.
+Originally \R{} considers a function as a raw text and parses it on each call.
 Byte-compilation can reduce time costs for expression parsing:
 <<ByteComp, cache=TRUE>>=
 f <- function(n) {
