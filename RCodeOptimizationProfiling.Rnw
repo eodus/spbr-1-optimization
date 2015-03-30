@@ -109,9 +109,7 @@
   Department of Statistical Modelling\\
 }
 
-\date{\small
-% MTNS 2014, Groningen, The Netherlands,\\
-  \today}
+\date{\small\today}
 % \expandafter\def\expandafter\insertshorttitle\expandafter{%
 %     \insertshorttitle\hfill\insertframenumber\,/\,\inserttotalframenumber}
 
@@ -472,7 +470,7 @@ fchunk(1e10)
 
 \begin{frame}
   \frametitle{Use proper methods, functions, data structures and packages}
-  Where are many \R{} packages\dots\\
+  There are many \R{} packages\dots\\
   \dots{}and some of them are better than others
 
   \bigskip
@@ -541,7 +539,7 @@ stopCluster(cluster)
 \begin{frame}[fragile]
   \frametitle{Byte-compilation and JIT}
 \R{} is \emph{interpreter.}
-Originally \R{} considered a function as a raw text and parsed it on each call.
+Originally \R{} considers a function as a raw text and parses it on each call.
 Byte-compilation can reduce time costs for expression parsing:
 <<ByteComp, cache=TRUE>>=
 f <- function(n) {
@@ -577,7 +575,7 @@ enableJIT(3) # 3 means the most aggressive compilation
   \begin{itemize}
     \item Byte-compiled code cannot to be profiled
     \item Much speedup only for loops; almost no speedup for vectorized code
-    \item Sometimes slows up code (a little bit, but\dots)
+    \item Sometimes slows up code
   \end{itemize}
 \end{frame}
 
@@ -704,7 +702,7 @@ microbenchmark(mean(x), mean.default(x))
 @
 
 \bigskip
-  Thus, for S3 specify function directly, for S4 use
+  Thus, for S3 specify function directly,
   for S4 use \code{findMethod()} to find the method and cache it into variable
 \end{frame}
 
@@ -775,7 +773,7 @@ microbenchmark(mean(x), mean.default(x), sum(x) / length(x), .Internal(mean(x)))
 
 
 \begin{frame}
-  \frametitle{Some advices}
+  \frametitle{Some advice}
   Avoid premature optimization (``root of all evil'') and ``optimization for optimization''.
   Optimize only critical parts of code. Use profiler to find them
 
@@ -784,7 +782,7 @@ microbenchmark(mean(x), mean.default(x), sum(x) / length(x), .Internal(mean(x)))
 
   \bigskip
   Estimate actual speedup by timing.
-  Don't use optimization which makes code much complicated but no significantly faster
+  Don't use optimization which makes code much more complicated but not significantly faster
 \end{frame}
 
 \section{Code profiling}
@@ -867,7 +865,7 @@ head(summaryRprof()$by.total, 15)
       functions, it can be hard to figure out exactly which function is being
       called. The easiest way to work around this is to name your functions
     \item Some calls are too fast to be traced by profiler
-    \item Profiling may influence to code performance
+    \item Profiling may influence code performance
   \end{itemize}
 \end{frame}
 
@@ -880,7 +878,7 @@ head(summaryRprof()$by.total, 15)
     \item Avoid premature optimization, use profiler to find bottlenecks
     \item \pkg{Rcpp} is good tool for low-level optimization
     \item Use timing for estimation of obtained speedup
-    \item Use unit test for verification of optimized code
+    \item Use unit tests for verification of optimized code
     \item Some \R{} distributions are faster (but may be incompatible)
   \end{itemize}
 \end{frame}
