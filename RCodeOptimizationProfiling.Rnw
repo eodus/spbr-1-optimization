@@ -878,7 +878,7 @@ head(summaryRprof()$by.total, 15)
     \item Avoid premature optimization, use profiler to find bottlenecks
     \item \pkg{Rcpp} is good tool for low-level optimization
     \item Use timing for estimation of obtained speedup
-    \item Use unit test for verification of optimized code
+    \item Use unit tests for verification of optimized code
     \item Some \R{} distributions are faster (but may be incompatible)
   \end{itemize}
 \end{frame}
